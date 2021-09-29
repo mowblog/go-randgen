@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"time"
+        "net/http"
+        _ "net/http/pprof"
 
 	"github.com/pingcap/go-randgen/gendata"
 	"github.com/pingcap/go-randgen/grammar"
