@@ -87,6 +87,13 @@ func ByConfig(config *ZzConfig) ([]string, Keyfun, error) {
 	if err != nil {
 		return nil, nil, err
 	}
+	// debug
+	// for _, field := range fieldExecs {
+	// 	fmt.Println(reflect.TypeOf(field))
+	// }
+
+	fields := "`sk`,`pk`," + joinFields(fieldExecs)
+	// fmt.Println(fields)
 
 	recordGor := config.Data.getRecordGen(fieldExecs)
 	row := make([]string, len(fieldExecs))
@@ -97,9 +104,9 @@ func ByConfig(config *ZzConfig) ([]string, Keyfun, error) {
 		valuesStmt := make([]string, 0, tableStmt.rowNum)
 		for i := 0; i < tableStmt.rowNum; i++ {
 			recordGor.oneRow(row)
-			valuesStmt = append(valuesStmt, wrapInDml(strconv.Itoa(i), row))
+			valuesStmt = append(valuesStmt, wrapInDml(strconv.Itoa(i), strconv.Itoa(i), row))
 		}
-		sqls = append(sqls, wrapInInsert(tableStmt.name, valuesStmt))
+		sqls = append(sqls, wrapInInsert(tableStmt.name, fields, valuesStmt))
 	}
 
 	return sqls, NewKeyfun(tableStmts, fieldExecs), nil
@@ -192,15 +199,16 @@ func ByDb(db *sql.DB, dbms string) (Keyfun, error) {
 	return NewKeyfun(tableStmts, fieldExecs), nil
 }
 
-const insertTemp = "insert into %s values %s"
+const insertTemp = "insert into %s(%s) values %s"
 
-func wrapInInsert(tableName string, valuesStmt []string) string {
-	return fmt.Sprintf(insertTemp, tableName, strings.Join(valuesStmt, ","))
+func wrapInInsert(tableName string, fields string, valuesStmt []string) string {
+	return fmt.Sprintf(insertTemp, tableName, fields, strings.Join(valuesStmt, ","))
 }
 
-func wrapInDml(pk string, data []string) string {
+func wrapInDml(sk string, pk string, data []string) string {
 	buf := &bytes.Buffer{}
-	buf.WriteString("(" + pk)
+	buf.WriteString("(" + sk)
+	buf.WriteString("," + pk)
 
 	for _, d := range data {
 		buf.WriteString("," + d)

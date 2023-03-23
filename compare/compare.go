@@ -76,8 +76,10 @@ func ByDb(sqls []string, db1 *sql.DB, db2 *sql.DB, nonOrder bool, visitor Visito
 
 		consistent, dsn1Res, dsn2Res := BySql(sql, db1, db2, nonOrder)
 
+		x := struct{ dsn1Res, dsn2Res DsnRes }{dsn1Res, dsn2Res}
+
 		if !consistent {
-			if err := visitor(sql, dsn1Res, dsn2Res); err != nil {
+			if err := visitor(sql, x.dsn1Res, x.dsn2Res); err != nil {
 				return err
 			}
 		}
@@ -114,6 +116,8 @@ func ByQuery(sql string, db1 *sql.DB, db2 *sql.DB, nonOrder bool) (consistent bo
 		wg.Done()
 	}()
 
+	// x := struct{ res1, res2 *QueryDsnRes }{res1, res2}
+
 	wg.Wait()
 
 	if res1.err == driver.ErrBadConn {
@@ -125,6 +129,8 @@ func ByQuery(sql string, db1 *sql.DB, db2 *sql.DB, nonOrder bool) (consistent bo
 	}
 
 	if !errConsistent(res1.err, res2.err) {
+		//debug
+		// log.Printf("Error: err different, \n")
 		return false, res1, res2
 	}
 
@@ -135,10 +141,13 @@ func ByQuery(sql string, db1 *sql.DB, db2 *sql.DB, nonOrder bool) (consistent bo
 
 	// compare
 	if nonOrder {
+		//debug
+		// log.Printf("NonOrderEqualTo, \n")
 		if !res1.Res.NonOrderEqualTo(res2.Res) {
 			return false, res1, res2
 		}
 	} else {
+		// log.Printf("BytesEqualTo, \n")
 		if !res1.Res.BytesEqualTo(res2.Res) {
 			return false, res1, res2
 		}
@@ -185,6 +194,8 @@ func ByExec(sql string, db1 *sql.DB, db2 *sql.DB) (consistent bool, dsn1Res DsnR
 	}
 
 	if res1.rowsAffected != res2.rowsAffected {
+		//debug
+		// log.Printf("Byxec[%s] affected rows diff\n", sql)
 		return false, res1, res2
 	}
 

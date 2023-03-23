@@ -69,6 +69,12 @@ func initCmd() {
 }
 
 func main() {
+	go func() {
+		ip := "0.0.0.0:8080"
+		if err := http.ListenAndServe(ip, nil); err != nil {
+			fmt.Println("开启pprof失败", ip, err)
+		}
+	}()
 	initCmd()
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(rootCmd.UsageString())

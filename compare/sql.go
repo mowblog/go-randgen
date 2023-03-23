@@ -64,18 +64,88 @@ func (s *SqlResult) Contains(row string) bool {
 	return ok
 }
 
+func (s *SqlResult) RoughContains(drow string) bool {
+	// delete space/table from source Rows
+	var t_sRows map[string]bool
+	t_sRows = make(map[string]bool)
+	ret := true
+
+	for row := range s.Rows {
+		t_row := strings.Replace(row, " ", "", -1)
+		t_row = strings.Replace(t_row, "\t", "", -1)
+		t_row = strings.Replace(t_row, "\x00", "", -1)
+		// t_row = strings.Replace(t_row, "\n", "", -1)
+		t_sRows[t_row] = true
+	}
+
+	dst_row := strings.Replace(drow, " ", "", -1)
+	dst_row = strings.Replace(dst_row, "\t", "", -1)
+	dst_row = strings.Replace(dst_row, "\x00", "", -1)
+	// dst_row = strings.Replace(dst_row, "\n", "", -1)
+
+	ret = t_sRows[dst_row]
+
+	// for row := range t_sRows {
+	// 	if row == dst_row {
+	// 		ret = true
+	// 		break
+	// 	}
+	// }
+
+	// if !ret {
+	// 	fmt.Printf("[%s]\n---\n", dst_row)
+	// 	fmt.Printf("[%x]\n---\n", dst_row)
+	// 	for rows := range t_sRows {
+	// 		fmt.Printf("%s\n", rows)
+	// 		fmt.Printf("%x\n", rows)
+	// 	}
+	// }
+
+	return ret
+}
+
 func (s *SqlResult) NonOrderEqualTo(another *SqlResult) bool {
 	if len(s.Rows) != len(another.Rows) {
+		// log.Printf("number of rows diff\n")
 		return false
 	}
 
-	for row := range another.Rows {
-		if !s.Contains(row) {
-			return false
-		}
+	var t_sRows = make(map[string]bool)
+
+	for row := range s.Rows {
+		t_row := strings.Replace(row, " ", "", -1)
+		t_row = strings.Replace(t_row, "\t", "", -1)
+		t_row = strings.Replace(t_row, "\x00", "", -1)
+		t_sRows[t_row] = true
 	}
 
+	for row := range another.Rows {
+		// if !s.Contains(row) {
+
+		dst_row := strings.Replace(row, " ", "", -1)
+		dst_row = strings.Replace(dst_row, "\t", "", -1)
+		dst_row = strings.Replace(dst_row, "\x00", "", -1)
+		if !t_sRows[dst_row] {
+			return false
+		}
+
+		// if !s.RoughContains(row) {
+		// fmt.Printf("\n<-----\n")
+		// fmt.Printf("%s\n", s.String())
+		// fmt.Printf("\n-----\n")
+		// fmt.Printf("%s\n", another.String())
+		// fmt.Printf("\n----->\n")
+		// return false
+		// }
+	}
+	// for row := range t_sRows {
+	// 	delete(t_sRows, row)
+	// }
+
+	// t_sRows = nil
+	// runtime.GC()
 	return true
+
 }
 
 // if s is equal to another, will return true
@@ -120,6 +190,9 @@ func (s *SqlResult) ColBytesEqualTo(another *SqlResult, r, c int, col []byte) bo
 	if len(col1) != len(col2) {
 		return false
 	}
+
+	// debug
+	fmt.Printf("len of col different")
 
 	return bytes.Equal(col1, col2)
 }
